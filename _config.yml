@@ -1,2 +1,3 @@
-	name: Simema Waudo, Cyber Security Enthusiast
-	markdown: kramdown
+name: Simema Waudo, Cyber Security Enthusiast
+markdown: kramdown
+permalink: /blog/:year/:month/:day/:title

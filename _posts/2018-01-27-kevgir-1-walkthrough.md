@@ -4,9 +4,11 @@ title: "Kevgir 1: Walkthrough"
 date: 2018-01-27
 ---
 
+## Information Gathering
 We first perform an nmap scan. 
 
-root@marksmith:~# nmap -A -T4 -p- 192.168.175.135
+```
+# nmap -A -T4 -p- 192.168.175.135
 
 Starting Nmap 7.40 ( https://nmap.org ) at 2017-09-21 16:33 EDT
 Nmap scan report for 192.168.175.135
@@ -113,3 +115,4 @@ HOP RTT     ADDRESS
 
 OS and Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
 Nmap done: 1 IP address (1 host up) scanned in 143.39 seconds
+```

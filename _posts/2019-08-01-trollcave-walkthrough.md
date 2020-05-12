@@ -9,6 +9,7 @@ This is a boot2root machine that was created by [David Yates][2], and hosted at 
 
 <!--more-->
 ## Information Gathering
+Changes13052020
 We start of with an nmap scan and get these ports open: 
 PORT   STATE SERVICE                                                                                                                                                  
 22/tcp open  ssh                                                                                                                                                      

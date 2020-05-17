@@ -5,7 +5,7 @@ date:   2019-08-02 15:07:19
 categories: [tutorial]
 comments: true
 ---
-This is a boot2root machine hosted on [VulnHub][1] that was created by [4ndr34z][5] and [DCAU][2]. Its graded as intermediate. As this is purely for educational purposes I'll throw in spoilers now. To exploit this machine we'll need to chain two different exploits. At the end we'll also include some mitigation strategies. Without much further ado here we go.
+This is a boot2root machine hosted on [VulnHub][1] that was created by [4ndr34z][5] and [DCAU][2]. Its graded as intermediate. As this is purely for educational purposes I'll throw in spoilers now. To exploit this machine we'll need to chain two different exploits, there will be some port forwarding and we'll need to exploit a second machine. At the end we'll also include some mitigation strategies. Without much further ado here we go.
 
 <!--more-->
 
@@ -19,7 +19,7 @@ Navigating to the home page:
 
 We had nikto running in the background but this gave too many false positives we moved on from it.
 
-Using curl to get all athe links on the page. There's only one useful link.
+Using curl to scrape the links on the page. There's only one useful link.
 ```
 kali@marksmith:~/vulnhub/tempus_fugit$ curl -s  192.168.109.142 | grep -Po '(href|src)=".{2,}"'
 ...
@@ -27,7 +27,7 @@ href="/upload"
 ...
 ```
 
-The first three links don't have anything promising. We go to `/upload`
+The home page has three links, the first three don't have anything promising. We go to `/upload`
 
 ![5-3.png](/assets/images/posts/tempus-fugit-walkthrough/20-3.png)
 
@@ -35,7 +35,7 @@ When we try upload the file like `Cherry Notes.ctb.txt`. It throws the error bel
 
 ![5-3.png](/assets/images/posts/tempus-fugit-walkthrough/20-4.png)
 
-We tried uploading other types of files all fail. It shows only 2 types of files are allowed rtf and txt:
+We tried uploading different file types (.php, .war, .elf) all fail. It only accepts file with extension [.txt] or [.rtf] with no spaces:
 
 ![5-3.png](/assets/images/posts/tempus-fugit-walkthrough/20-5.png)
 
@@ -49,11 +49,11 @@ Set up burp and start intercepting. In this case the use of Burp is a bit differ
 
 After much investigation, the `/upload` function prints the contents of the file, with `.txt or .rtf` that is uploaded. This gives us a hunch that in the background, it could be running a function like `/bin/cat [filename].txt`. So what if we could chain some commands at the end of the `[filename].txt` using `; or | or &&` we get command execution. We can do ls, id, pwd, uname -a. Boom we got RCE.
 
-![5-5a.png](/assets/images/posts/tempus-fugit-walkthrough/20-5a.png)
-
-![5-3.png](/assets/images/posts/tempus-fugit-walkthrough/20-5b.png)
+![5-5a.png](/assets/images/posts/tempus-fugit-walkthrough/20-5b.png)
 
 ![5-3.png](/assets/images/posts/tempus-fugit-walkthrough/20-5c.png)
+
+![5-3.png](/assets/images/posts/tempus-fugit-walkthrough/20-5a.png)
 
 Since we got RCE and can list the contents ; we find a file called `main.py`. Reading the code, there’s a part that splits the filename at the fullstops; thus payloads with fullstops are problematic; also payloads with slashes(/) too are problematic. Tried using wget to upload but we’re restricted from executing things in `/upload` directory … i think
 

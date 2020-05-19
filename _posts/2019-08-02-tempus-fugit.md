@@ -18,7 +18,10 @@ Navigating to the home page:
 ![5-3.png](/assets/images/posts/tempus-fugit-walkthrough/20-2.png)
 
 We had nikto running in the background but this gave too many false positives we moved on from it.
-
+```
+# cat nikto_192.168.109.142_80.txt | wc -l 
+2497
+```
 Using curl to get all athe links on the page. There's only one useful link.
 ```
 kali@marksmith:~/vulnhub/tempus_fugit$ curl -s  192.168.109.142 | grep -Po '(href|src)=".{2,}"'

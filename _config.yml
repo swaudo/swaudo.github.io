@@ -7,18 +7,19 @@ title: Marksmith
 email:
 description: the never ending learning experience of security journey
 url: # the base hostname & protocol for your site
-keywords: ["blog", "jekyll"]
+keywords: ["walkthrough", "tutorial"]
 
 #
 ###################################
 # Jekyll configuration
 ####################################
 #
-timezone:          Australia/Melbourne
+timezone:          UTC
 markdown:          kramdown
 highlighter:       rouge
 excerpt_separator: <!--more-->
 permalink:         /articles/:year-:month/:title
+#permalink:         /:title/
 
 kramdown:
   auto_ids: true
@@ -34,7 +35,7 @@ kramdown:
 #
 owner:
   name: Mark Smith
-  avatar: 
+  avatar:
   job: "Penetration Tester"
   bio: "the guy never gets tired of finding new things"
   email:
@@ -69,3 +70,11 @@ owner:
   codepen: #username
   reddit: #username
   telegram: #username
+
+####################################
+# Plugins
+####################################
+
+plugins:
+  - jekyll-paginate
+paginate: 3
